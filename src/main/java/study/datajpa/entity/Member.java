@@ -10,6 +10,10 @@ import javax.persistence.*;
 @ToString(of= {"id", "userName", "age"})
 @Getter
 //@Setter
+@NamedQuery(
+        name = "Member.findByUserName2",
+        query = "select m from Member m where m.userName = :userName"
+)
 public class Member {
 
     @Id
@@ -27,6 +31,11 @@ public class Member {
 
     public Member(String userName) {
         this.userName = userName;
+    }
+
+    public Member(String userName, int age) {
+        this.userName = userName;
+        this.age = age;
     }
 
     public Member(String userName, int age, Team team) {
