@@ -5,16 +5,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 import study.datajpa.entity.Team;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,6 +27,8 @@ public class MemberRepositoryTest {
 
     @Autowired MemberRepository memberRepository;
     @Autowired TeamRepository teamRepository;
+    @PersistenceContext
+    EntityManager em;
 
     @Test
     @Rollback(value = false)
@@ -60,19 +65,30 @@ public class MemberRepositoryTest {
         teamRepository.save(team2);
 
         Member member1 = new Member("TestMember1", 10, team1);
-        Member member2 = new Member("TestMember2", 20, team1);
-        Member member3 = new Member("TestMember3", 30, team1);
-        Member member4 = new Member("TestMember4", 40, team2);
+        Member member2 = new Member("TestMember2", 10, team1);
+        Member member3 = new Member("TestMember3", 10, team1);
+        Member member4 = new Member("TestMember4", 10, team2);
+        Member member5 = new Member("TestMember5", 10, team2);
+        Member member6 = new Member("TestMember1", 30, team2);
+        Member member7 = new Member("TestMember1", 40, team2);
+
 
         List<Member> members = new ArrayList<>();
         members.add(member1);
         members.add(member2);
         members.add(member3);
         members.add(member4);
+        members.add(member5);
+        members.add(member6);
+        members.add(member7);
+
         Member savedMember1 = memberRepository.save(member1);
         Member savedMember2 = memberRepository.save(member2);
         Member savedMember3 = memberRepository.save(member3);
         Member savedMember4 = memberRepository.save(member4);
+        Member savedMember5 = memberRepository.save(member5);
+        Member savedMember6 = memberRepository.save(member6);
+        Member savedMember7 = memberRepository.save(member7);
 
         return members;
     }
@@ -141,9 +157,11 @@ public class MemberRepositoryTest {
     void findMemberDtoTest(){
         MakeTestMembersWithTeam();
         List<MemberDto> memberDto = memberRepository.findMemberDto();
-        assertThat(memberDto.size()).isEqualTo(4);
+        assertThat(memberDto.size()).isEqualTo(7);
         for (MemberDto dto : memberDto) {
-            System.out.println(dto.toString());
+            assertThat(dto).hasFieldOrProperty("id");
+            assertThat(dto).hasFieldOrProperty("userName");
+            assertThat(dto).hasFieldOrProperty("teamName");
         }
     }
 
@@ -191,6 +209,152 @@ public class MemberRepositoryTest {
         }catch (Exception e){
             System.out.println(e.getClass());
             assertThat(e).isInstanceOf(org.springframework.dao.IncorrectResultSizeDataAccessException.class);
+        }
+    }
+
+    @Test
+    @DisplayName("Spring Data JPA로 Paging 테스트")
+    public void findByAgeTest(){
+        //given
+        MakeTestMembersWithTeam();
+        int age = 10;
+        int offset = 0;
+        int limit = 3;
+
+        PageRequest pageRequest = PageRequest.of(offset, limit, Sort.by(Sort.Direction.DESC, "userName"));
+
+        //when
+        Page<Member> memberPage = memberRepository.findByAge(age, pageRequest);
+
+        //Dto로 변환하기
+        Page<MemberDto> memberDtos = memberPage.map(m -> new MemberDto(m.getId(), m.getUserName(), null));//조회결과 team은 없으니깐 null로 넣음
+
+        //then
+        assertThat(memberPage.getTotalElements()).isEqualTo(5);
+        assertThat(memberPage.getNumber()).isEqualTo(0);
+        assertThat(memberPage.getTotalPages()).isEqualTo(2);
+        assertThat(memberPage.isFirst()).isTrue();
+        assertThat(memberPage.hasNext()).isTrue();
+
+        int i=5;
+        for (Member member : memberPage.getContent()) {
+            String sol = "TestMember"+i;
+            System.out.println(member.getUserName() +" : "+ sol);
+            assertThat(member.getUserName()).isEqualTo(sol);
+            i--;
+        }
+    }
+
+    @Test
+    @DisplayName("Spring Data JPA로 Paging 테스트-Slice")
+    public void findByAgeSliceTest(){
+        //given
+        MakeTestMembersWithTeam();
+        String userName = "TestMember1";
+        int offset = 0;
+        int limit = 3;
+        Member member8 = new Member(userName, 50);
+        Member member9 = new Member(userName, 60);
+        memberRepository.save(member8);
+        memberRepository.save(member9);
+
+        PageRequest pageRequest = PageRequest.of(offset, limit, Sort.by(Sort.Direction.DESC, "age"));
+
+        //when
+        Slice<Member> memberPage = memberRepository.findByUserName(userName, pageRequest);
+
+        //then
+//        assertThat(memberPage.getTotalElements()).isEqualTo(5);
+        assertThat(memberPage.getNumber()).isEqualTo(0);
+//        assertThat(memberPage.getTotalPages()).isEqualTo(2);
+        assertThat(memberPage.isFirst()).isTrue();
+        assertThat(memberPage.hasNext()).isTrue();
+        assertThat(memberPage.getContent().size()).isEqualTo(3);
+
+        int sol = 60;
+        for (Member member : memberPage.getContent()) {
+            System.out.println(member.getAge() +" : "+ sol);
+            assertThat(member.getAge()).isEqualTo(sol);
+            sol -= 10;
+        }
+    }
+
+    @Test
+    @DisplayName("Spring Data JPA로 Paging 테스트 - count 쿼리 별도로 뺴기")
+    public void findByAgeTest2(){
+        //given
+        MakeTestMembersWithTeam();
+        int age = 10;
+        int offset = 0;
+        int limit = 3;
+
+        PageRequest pageRequest = PageRequest.of(offset, limit, Sort.by(Sort.Direction.DESC, "userName"));
+
+        //when
+        Page<Member> memberPage = memberRepository.findByAge2(age, pageRequest);
+
+        //then
+        assertThat(memberPage.getTotalElements()).isEqualTo(5);
+        assertThat(memberPage.getNumber()).isEqualTo(0);
+        assertThat(memberPage.getTotalPages()).isEqualTo(2);
+        assertThat(memberPage.isFirst()).isTrue();
+        assertThat(memberPage.hasNext()).isTrue();
+
+        int i=5;
+        for (Member member : memberPage.getContent()) {
+            String sol = "TestMember"+i;
+            System.out.println(member.getUserName() +" : "+ sol);
+            assertThat(member.getUserName()).isEqualTo(sol);
+            i--;
+        }
+    }
+
+    @Test
+    @DisplayName("Spring Data JPA로 bulk 업데이트 테스트")
+    public void bulkAgePlusTest() {
+        //given
+        MakeTestMembersWithTeam();
+
+        //when
+        int i = memberRepository.bulkAgePlus(30);
+
+        //then
+        assertThat(i).isEqualTo(2);
+
+        //when
+        List<Member> byUserNameAndAgeGreaterThan = memberRepository.findByUserNameAndAgeGreaterThan("TestMember1", 30);
+        byUserNameAndAgeGreaterThan.sort(new Comparator<Member>() {
+            @Override
+            public int compare(Member o1, Member o2) {
+                return o1.getAge()- o2.getAge();//asc
+            }
+        });
+
+        //then
+        //영속성 컨텍스트에 반영이 안된다.
+        int age = 30;
+        for (Member member : byUserNameAndAgeGreaterThan) {
+            assertThat(member.getAge()).isEqualTo(age);//
+            age +=10;
+        }
+
+        //when
+        em.flush();
+        em.clear();
+        List<Member> byUserNameAndAgeGreaterThan2 = memberRepository.findByUserNameAndAgeGreaterThan("TestMember1", 30);
+        byUserNameAndAgeGreaterThan2.sort(new Comparator<Member>() {
+            @Override
+            public int compare(Member o1, Member o2) {
+                return o1.getAge()- o2.getAge();//asc
+            }
+        });
+
+        //then
+        //영속성 컨텍스트를 갱신했다
+        age = 31;
+        for (Member member : byUserNameAndAgeGreaterThan2) {
+            assertThat(member.getAge()).isEqualTo(age);
+            age +=10;
         }
 
 
