@@ -447,4 +447,15 @@ public class MemberRepositoryTest {
 
     }
 
+    @Test
+    @DisplayName("Spring Data userDefined Repository 테스트")
+    public void MemberRepositoryCustomTest(){
+        //given
+        MakeTestMembersWithTeam();
+        em.flush();
+        em.clear();
+
+        List<Member> memberCustom = memberRepository.findMemberCustom();
+    }
+
 }
