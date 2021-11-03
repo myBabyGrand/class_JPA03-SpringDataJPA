@@ -356,7 +356,95 @@ public class MemberRepositoryTest {
             assertThat(member.getAge()).isEqualTo(age);
             age +=10;
         }
+    }
 
+    @Test
+    @DisplayName("Spring Data fetch join 테스트")
+    public void findMemberLazy() {
+        //given
+        MakeTestMembersWithTeam();
+        em.flush();
+        em.clear();
+
+        //when
+        System.out.println("memberRepository.findAll2");
+        List<Member> members = memberRepository.findAll2();
+
+        //then
+        for (Member member : members) {
+            System.out.println(member);
+            System.out.println(member.getTeam().getClass());//proxy
+            System.out.println(member.getTeam().getTeamName());
+        }
+
+        em.flush();
+        em.clear();
+
+        //when
+        System.out.println("memberRepository.findAllMemberFetchJoin");
+        List<Member> allMemberFetchJoin = memberRepository.findAllMemberFetchJoin();
+
+        //then
+        for (Member member : allMemberFetchJoin) {
+            System.out.println(member);
+            System.out.println(member.getTeam().getClass());//team
+            System.out.println(member.getTeam().getTeamName());
+        }
+
+        em.flush();
+        em.clear();
+
+        System.out.println("memberRepository.findAllMemberEntityGraph");
+        List<Member> allMemberEntityGraph = memberRepository.findAllMemberEntityGraph();
+        for (Member member : allMemberEntityGraph) {
+            System.out.println(member);
+            System.out.println(member.getTeam().getClass());//team
+            System.out.println(member.getTeam().getTeamName());
+        }
+
+        em.flush();
+        em.clear();
+
+        System.out.println("memberRepository.findEntityGraphByUserName");
+        List<Member> testMember1 = memberRepository.findEntityGraphByUserName("TestMember1");
+        for (Member member : testMember1) {
+            System.out.println(member);
+            System.out.println(member.getTeam().getClass());//team
+            System.out.println(member.getTeam().getTeamName());
+        }
 
     }
+
+    @Test
+    @DisplayName("Spring Data hint 테스트")
+    public void findReadOnlyByUserNameTest(){
+        Member member1 = new Member("Member1", 10);
+        memberRepository.save(member1);
+        em.flush();
+        em.clear();
+
+        Member readOnlyByUserName = memberRepository.findReadOnlyByUserName(member1.getUserName());
+        readOnlyByUserName.setUserName("Member2");//read only : dirty-check 하지 않음. 스냅샷없음
+//        memberRepository.save(readOnlyByUserName);//update 하지 않음
+
+        em.flush();//update 하지 않음
+        em.clear();
+
+        Optional<Member> byId = memberRepository.findById(member1.getId());
+        System.out.println(byId.orElseThrow(NullPointerException::new).getUserName());
+        assertThat(byId.orElseThrow(NullPointerException::new).getUserName()).isNotEqualTo("Member2");
+    }
+
+    @Test
+    @DisplayName("Spring Data Lock 테스트")
+    public void findLockByUserNameTest(){
+        Member member1 = new Member("Member1", 10);
+        memberRepository.save(member1);
+        em.flush();
+        em.clear();
+
+        Member lockByUserName = memberRepository.findLockByUserName(member1.getUserName());//select for  update
+
+    }
+
 }

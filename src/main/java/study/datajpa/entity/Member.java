@@ -9,11 +9,12 @@ import javax.persistence.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(of= {"id", "userName", "age"})
 @Getter
-//@Setter
+@Setter
 @NamedQuery(
         name = "Member.findByUserName2",
         query = "select m from Member m where m.userName = :userName"
 )
+@NamedEntityGraph(name = "Member.all", attributeNodes = @NamedAttributeNode("team"))
 public class Member {
 
     @Id
