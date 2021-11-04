@@ -38,7 +38,7 @@ public class MemberController {
                 .map(MemberDto::new);
     }
 
-    @PostConstruct
+//    @PostConstruct
     public void init(){
         List<Member> memberList = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
