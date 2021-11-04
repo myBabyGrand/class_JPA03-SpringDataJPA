@@ -166,7 +166,7 @@ public class MemberRepositoryTest {
     }
 
     @Test
-    @DisplayName("Spring Data JPA로 Binding Param을 이용한 Query 테스트")
+    @DisplayName("Spring Data로 Binding Param을 이용한 Query 테스트")
     void findByNamesTest(){
         MakeTestMembers();
         List<Member> findMembers = memberRepository.findByNames(Arrays.asList("TestMember1", "TestMember2"));
@@ -177,7 +177,7 @@ public class MemberRepositoryTest {
     }
 
     @Test
-    @DisplayName("Spring Data JPA로 다양한 반환타입을 이용한 Query 테스트")
+    @DisplayName("Spring Data로 다양한 반환타입을 이용한 Query 테스트")
     void findVariousReturnTypeOfMemberByUserNameTest(){
         List<Member> members = MakeTestMembers();
 
@@ -213,7 +213,7 @@ public class MemberRepositoryTest {
     }
 
     @Test
-    @DisplayName("Spring Data JPA로 Paging 테스트")
+    @DisplayName("Spring Data로 Paging 테스트")
     public void findByAgeTest(){
         //given
         MakeTestMembersWithTeam();
@@ -246,7 +246,7 @@ public class MemberRepositoryTest {
     }
 
     @Test
-    @DisplayName("Spring Data JPA로 Paging 테스트-Slice")
+    @DisplayName("Spring Data로 Paging 테스트-Slice")
     public void findByAgeSliceTest(){
         //given
         MakeTestMembersWithTeam();
@@ -280,7 +280,7 @@ public class MemberRepositoryTest {
     }
 
     @Test
-    @DisplayName("Spring Data JPA로 Paging 테스트 - count 쿼리 별도로 뺴기")
+    @DisplayName("Spring Data로 Paging 테스트 - count 쿼리 별도로 뺴기")
     public void findByAgeTest2(){
         //given
         MakeTestMembersWithTeam();
@@ -310,7 +310,7 @@ public class MemberRepositoryTest {
     }
 
     @Test
-    @DisplayName("Spring Data JPA로 bulk 업데이트 테스트")
+    @DisplayName("Spring Data로 bulk 업데이트 테스트")
     public void bulkAgePlusTest() {
         //given
         MakeTestMembersWithTeam();
@@ -359,7 +359,7 @@ public class MemberRepositoryTest {
     }
 
     @Test
-    @DisplayName("Spring Data fetch join 테스트")
+    @DisplayName("Spring Data JPA fetch join 테스트")
     public void findMemberLazy() {
         //given
         MakeTestMembersWithTeam();
@@ -416,7 +416,7 @@ public class MemberRepositoryTest {
     }
 
     @Test
-    @DisplayName("Spring Data hint 테스트")
+    @DisplayName("Spring Data JPA hint 테스트")
     public void findReadOnlyByUserNameTest(){
         Member member1 = new Member("Member1", 10);
         memberRepository.save(member1);
@@ -436,7 +436,7 @@ public class MemberRepositoryTest {
     }
 
     @Test
-    @DisplayName("Spring Data Lock 테스트")
+    @DisplayName("Spring Data JPA Lock 테스트")
     public void findLockByUserNameTest(){
         Member member1 = new Member("Member1", 10);
         memberRepository.save(member1);
@@ -448,7 +448,7 @@ public class MemberRepositoryTest {
     }
 
     @Test
-    @DisplayName("Spring Data userDefined Repository 테스트")
+    @DisplayName("Spring Data JPA userDefined Repository 테스트")
     public void MemberRepositoryCustomTest(){
         //given
         MakeTestMembersWithTeam();
@@ -457,5 +457,6 @@ public class MemberRepositoryTest {
 
         List<Member> memberCustom = memberRepository.findMemberCustom();
     }
+
 
 }

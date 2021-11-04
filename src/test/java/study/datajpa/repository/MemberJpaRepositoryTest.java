@@ -167,5 +167,6 @@ class MemberJpaRepositoryTest {
         assertThat(i).isEqualTo(2);
 
     }
+
 }
 
