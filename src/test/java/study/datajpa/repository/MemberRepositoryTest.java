@@ -5,12 +5,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
+import study.datajpa.Specification.MemberSpec;
 import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 import study.datajpa.entity.Team;
@@ -458,5 +457,45 @@ public class MemberRepositoryTest {
         List<Member> memberCustom = memberRepository.findMemberCustom();
     }
 
+    @Test
+    @DisplayName("Spring Data JPA JpaSpecificationExecutor 테스트")
+    public void JpaSpecificationExecutorTest(){
+        //given
+        MakeTestMembersWithTeam();
+        em.flush();
+        em.clear();
+
+        //when
+        Specification<Member> spec = MemberSpec.userName("TestMember1").and(MemberSpec.teamName("2 team"));
+        List<Member> result = memberRepository.findAll(spec);
+
+        //then
+        Assertions.assertThat(result.size()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("Spring Data JPA QueryByExample 테스트")
+    public void QueryByExampleTest (){
+        //given
+        MakeTestMembersWithTeam();
+        em.flush();
+        em.clear();
+
+        //when
+        //Probe
+        Member member = new Member("TestMember1");
+        Team team = new Team("2 team");
+        member.setTeam(team);
+
+        //age 항목 무시
+        ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("age");
+        Example<Member> example = Example.of(member, matcher);
+
+        List<Member> result = memberRepository.findAll(example);
+
+        //then
+        assertThat(result.size()).isEqualTo(2);
+
+    }
 
 }
