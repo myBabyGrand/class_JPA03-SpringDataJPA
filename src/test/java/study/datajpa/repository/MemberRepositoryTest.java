@@ -498,4 +498,53 @@ public class MemberRepositoryTest {
 
     }
 
+    @Test
+    @DisplayName("Spring Data JPA projections 테스트")
+    public void ProjectionseTest (){
+        //given
+        MakeTestMembersWithTeam();
+        em.flush();
+        em.clear();
+
+        //when
+        List<UserNameOnly> projections = memberRepository.findProjectionsByUserName("TestMember1");
+        List<UserNameOnlyDto> projectionDto = memberRepository.findProjectDtoByUserName("TestMember1");
+        List<UserNameOnlyDto> dynamicProjections= memberRepository.findDynamicProjectionByUserName("TestMember1", UserNameOnlyDto.class);
+        List<NestedClosedProjections> NestedClosedProjections = memberRepository.findDynamicProjectionByUserName("TestMember1", NestedClosedProjections.class);
+
+        //then
+        assertThat(projections.size()).isEqualTo(3);
+        for (UserNameOnly projection : projections) {
+            System.out.println(projection.getMemberUserNameAndAge());
+        }
+        System.out.println("=======================");
+        for (UserNameOnlyDto userNameOnlyDto : projectionDto) {
+            System.out.println(userNameOnlyDto.getUserName());
+        }
+        System.out.println("=======================");
+        for (UserNameOnlyDto dynamicProjection : dynamicProjections) {
+            System.out.println(dynamicProjection.getUserName());
+        }
+        System.out.println("=======================");
+        for (NestedClosedProjections nestedClosedProjection : NestedClosedProjections) {
+            System.out.println(nestedClosedProjection.getTeam().getTeamName() + " "+nestedClosedProjection.getUserName());
+        }
+    }
+    @Test
+    @DisplayName("Spring Data JPA native query 테스트")
+    public void NativeQueryTest (){
+        //given
+        MakeTestMembersWithTeam();
+        em.flush();
+        em.clear();
+
+        Member queryMember = memberRepository.findByNativeQuery("TestMember4");
+        System.out.println(queryMember.toString());
+
+        Page<MemberProjection> byNativeProjection = memberRepository.findByNativeProjection(PageRequest.of(0, 10));
+        for (MemberProjection memberProjection : byNativeProjection) {
+            System.out.println("["+memberProjection.getTeamName()+"]"+memberProjection.getId()+" "+memberProjection.getUserName());
+        }
+    }
+
 }
